@@ -1,0 +1,14 @@
+FROM flink:1.20.2-scala_2.12-java17
+
+# Install Python 3.10 and pip
+RUN apt-get update -y && \
+    apt-get install -y python3.10 python3-pip python3.10-venv && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set 'python' alias to 'python3'
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
+
+# Install PyFlink package (for local testing if needed)
+RUN pip3 install apache-flink==1.20.2
+
+# Copy custom configs and jobs (handled by volumes in docker-compose)

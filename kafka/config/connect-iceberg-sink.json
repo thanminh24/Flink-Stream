@@ -1,0 +1,31 @@
+{
+    "name": "iceberg-sink",
+    "config": {
+        "connector.class": "org.apache.iceberg.connect.IcebergSinkConnector",
+        "tasks.max": "1",
+        "errors.log.enable": "true",
+        "topics.regex": "cdc.commerce.*",
+        "transforms": "debezium",
+        "transforms.debezium.type": "org.apache.iceberg.connect.transforms.DebeziumTransform",
+        "transforms.debezium.cdc.target.pattern": "cdc.{table}_postgres",
+        "iceberg.tables.route-field": "_cdc.target",
+        "iceberg.tables.dynamic-enabled": "true",
+        "iceberg.tables.auto-create-enabled": "true",
+        "iceberg.tables.evolve-schema-enabled": "true",
+        "iceberg.control.commit.interval-ms": "10000",
+        "iceberg.control.commit.timeout-ms": "60000",
+        "iceberg.catalog": "iceberg",
+        "iceberg.catalog.type": "rest",
+        "iceberg.catalog.uri": "http://10.17.26.218:8181/catalog",
+        "iceberg.catalog.warehouse": "demo",
+        "iceberg.catalog.io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
+        "iceberg.catalog.s3.endpoint": "http://10.17.26.218:9000",
+        "iceberg.catalog.s3.access-key-id": "minioadmin",
+        "iceberg.catalog.s3.secret-access-key": "minioadmin123",
+        "iceberg.catalog.s3.path-style-access": "true",
+        "iceberg.catalog.s3.region": "us-east-1",
+        "iceberg.catalog.s3.signer.region": "us-east-1",
+        "iceberg.table.cdc.commerce_account.id-columns": "user_id",
+        "iceberg.table.cdc.commerce_product.id-columns": "product_id"   
+    }
+}
