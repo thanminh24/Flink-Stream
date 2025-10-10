@@ -1,0 +1,20 @@
+# Modified docker-compose-tm.yaml for 10.17.26.217
+services:
+  cdc-flink-taskmanager:
+    build:
+      context: .
+      dockerfile: Dockerfile.taskmanager
+    image: postgres-lakehouse-cdc-flink-taskmanager-mini
+    container_name: CDC-Flink-TaskManager
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=10.17.26.218
+      - AWS_REGION=us-east-1
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_EC2_METADATA_DISABLED=true
+      - JAVA_TOOL_OPTIONS=-Daws.region=us-east-1 -Daws.ec2MetadataDisabled=true
+    command: taskmanager
+    volumes:
+      - ./flink/plugins:/flink/plugins
+      - ./flink/conf:/opt/flink/conf
+      - ./flink/conf/log4j.properties:/opt/flink/conf/log4j.properties:ro
+    network_mode: host

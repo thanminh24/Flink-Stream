@@ -1,0 +1,97 @@
+services:
+  cdc-postgres:
+    image: postgres:16.2
+    container_name: CDC-Postgres
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    command: postgres -c listen_addresses='*' -c config_file=/etc/postgresql/postgresql.conf
+    volumes:
+      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./postgres/scripts/seed:/docker-entrypoint-initdb.d
+    env_file:
+      - ./.env
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    networks:
+      - cdc-network
+
+  cdc-kafka:
+    image: apache/kafka:3.8.0
+    container_name: CDC-Kafka
+    ports:
+      - "8083:8083"
+      - "9092:9092"
+      - "19092:19092"
+      - "29093:29093"
+    environment:
+      - KAFKA_NODE_ID=1
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT_HOST://10.17.26.218:9092,PLAINTEXT://cdc-kafka:19092
+      - KAFKA_PROCESS_ROLES=broker,controller
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=1@cdc-kafka:29093
+      - KAFKA_LISTENERS=CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:9092,PLAINTEXT://0.0.0.0:19092
+      - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS=0
+      - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
+      - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+      - KAFKA_LOG_DIRS=/tmp/kraft-combined-logs
+      - AWS_REGION=us-east-1
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_EC2_METADATA_DISABLED=true
+      - JAVA_TOOL_OPTIONS=-Daws.region=us-east-1 -Daws.ec2MetadataDisabled=true
+      - SOCKET_REQUEST_MAX_BYTES=209715200
+    user: root
+    volumes:
+      - ./kafka/config:/opt/kafka/config-cdc
+      - ./kafka/plugins:/opt/kafka/plugins
+      - ./data/kafka/tmp:/tmp
+      - ./data/kafka/out:/out-kafka
+    env_file:
+      - ./.env
+    networks:
+      - cdc-network
+
+  cdc-flink-jobmanager:
+    build:
+      context: .
+      dockerfile: Dockerfile.flink
+    image: postgres-lakehouse-cdc-flink-jobmanager
+    container_name: CDC-Flink-JobManager
+    ports:
+      - "8081:8081"
+      - "6123:6123"
+      - "6124:6124"
+      - "6125:6125"
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=10.17.26.218
+      - AWS_REGION=us-east-1
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_EC2_METADATA_DISABLED=true
+      - JAVA_TOOL_OPTIONS=-Daws.region=us-east-1 -Daws.ec2MetadataDisabled=true
+    command: jobmanager
+    volumes:
+      - ./flink/jobs:/opt/flink/usrlib
+      - ./flink/plugins:/flink/plugins
+      - ./flink/conf:/opt/flink/conf
+    depends_on:
+      - cdc-kafka
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    networks:
+      - cdc-network
+
+networks:
+  cdc-network:
+    driver: bridge

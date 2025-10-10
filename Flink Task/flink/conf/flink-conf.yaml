@@ -1,0 +1,19 @@
+blob.server.port: 6124
+taskmanager.memory.process.size: 1728m
+jobmanager.rpc.address: 10.17.26.218
+state.backend.incremental: true
+restart-strategy.fixed-delay.attempts: 999
+jobmanager.memory.process.size: 1600m
+jobmanager.web.port: 8081
+jobmanager.rpc.port: 6123
+query.server.port: 6125
+taskmanager.rpc.port: 6122
+execution.checkpointing.interval: 10000
+restart-strategy.fixed-delay.delay: 10s
+taskmanager.data.port: 6121
+taskmanager.numberOfTaskSlots: 999
+state.backend: rocksdb
+restart-strategy: fixed-delay
+classloader.parent-first-patterns.additional: com.codahale.metrics;io.dropwizard.metrics;org.apache.iceberg.metrics
+env.java.opts.all: --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/sun.nio.ch=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED -Dlog4j.skipJansi=true
+state.checkpoints.dir: file:///tmp/checkpoints
